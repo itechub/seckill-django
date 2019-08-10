@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "seckill",
 ]
 
 MIDDLEWARE = [
@@ -113,6 +114,8 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+TIME_ZONE = "Asia/Shanghai"
 
 
 # Static files (CSS, JavaScript, Images)
