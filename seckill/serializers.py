@@ -41,7 +41,7 @@ class ActivityInstanceSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
-    activity = ActivityInstanceSerializer()
+    activity = ActivitySerializer()
     created = serializers.ReadOnlyField()
 
     class Meta:

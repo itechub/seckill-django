@@ -62,7 +62,7 @@ class Order(models.Model):
             raise ValidationError(("product inventory is empty"))
 
     def __str__(self):
-        return self.uuid + self.activity.id
+        return str(self.uuid) + str(self.activity.id)
 
     def save(self, *args, **kwargs):
         self.full_clean()

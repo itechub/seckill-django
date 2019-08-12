@@ -1,0 +1,92 @@
+# docker-compose.yml
+# Copyright (C) 2018 shady <shady@MrRobot.local>
+#
+version: "3"
+services:
+  mysql:
+    image: shadybat/seckill-mysql:v1.1
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SECKILL_DB_PASSWORD}
+      MYSQL_DATABASE: ${SECKILL_DB_NAME}
+    volumes:
+      - /home/docker/volumes/data:/var/lib/mysql # mysql data source
+      - /home/docker/volumes/log:/var/log/mysql # mysql log
+    deploy:
+      placement:
+        constraints: [node.role == worker]
+    networks:
+      - seckill
+
+  redis:
+    image: shadybat/seckill-redis:v1.1
+    deploy:
+      placement:
+        constraints: [node.role == worker]
+    networks:
+      - seckill
+
+  django:
+    image: shadybat/seckill-django:v1.1
+    deploy:
+      placement:
+        constraints: [node.role == worker]
+    #  resources:
+    #    limits:
+    #      cpus: '1.50'
+    #      memory: 250M
+    #    reservations:
+    #      cpus: '1'
+    #      memory: 200M
+    depends_on:
+      - redis
+      - mysql
+    environment:
+      DJANGO_MANAGEPY_MIGRATE: "on"
+      DJANGO_MANAGEPY_COLLECTSTATIC: "on"
+      SECKILL_DEBUG: ${SECKILL_DEBUG}
+      SECKILL_SECRET_KEY: ${SECKILL_SECRET_KEY}
+      SECKILL_DB_HOST: mysql
+      SECKILL_DB_PORT: 3306
+      SECKILL_DB_USERNAME: ${SECKILL_DB_USERNAME}
+      SECKILL_DB_PASSWORD: ${SECKILL_DB_PASSWORD}
+      SECKILL_DB_NAME: ${SECKILL_DB_NAME}
+      SECKILL_SENTRY: ${SECKILL_SENTRY}
+      SECKILL_ADMIN_NAME: ${SECKILL_ADMIN_NAME}
+      SECKILL_ADMIN_EMAIL: ${SECKILL_ADMIN_EMAIL}
+      SECKILL_ADMIN_PASS: ${SECKILL_ADMIN_PASS}
+
+    # mount django static file, served by nginx
+    volumes:
+      - /home/docker/volumes/statics:/env/app/collectstatic/statics
+      - /home/docker/volumes/media:/env/app/media
+    networks:
+      - seckill
+
+  nginx:
+    image: shadybat/seckill-nginx:latest
+    depends_on:
+      - django
+    ports:
+      - "1984:80"
+    deploy:
+      placement:
+        constraints: [node.role == worker]
+    volumes:
+      - /home/docker/volumes/statics:/usr/share/nginx/statics
+      - /home/docker/volumes/media:/usr/share/nginx/media
+    networks:
+      - seckill
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - seckill
+
+networks:
+  seckill:

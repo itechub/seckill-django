@@ -105,8 +105,13 @@ venv.bak/
 
 # mkdocs documentation
 /site
+collectstatic
+deployment/volumes
+scripts/jmeter/result/
+scripts/jmeter/webreport/
 
 # mypy
 .mypy_cache/
 
 dump.rdb
+

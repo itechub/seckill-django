@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponse
@@ -76,21 +77,27 @@ class ActivityInstance(GenericAPIView):
         if activity.get_status() == "RUNNING":
             if activity.product.inventory <= 0:
                 context = {"msg": SECKILL_CONSTANT["EMPTY_INVENTPRY"]}
-                return Response(context, status=status.HTTP_400_BAD_REQUEST)
+                return Response(context, status=status.HTTP_200_OK)
             try:
-                order = Order.objects.create(uuid=uuid, activity=activity)
+                with transaction.atomic():
+                    order = Order.objects.create(uuid=uuid, activity=activity)
+                    product = Product.objects.select_for_update().get(
+                        pk=activity.product.id
+                    )
+                    product.inventory -= 1
+                    product.save()
             except ValidationError:
                 context = {"msg": SECKILL_CONSTANT["DUPLICATE_ORDER"]}
-                return Response(context, status=status.HTTP_400_BAD_REQUEST)
+                return Response(context, status=status.HTTP_200_OK)
             serializer = OrderSerializer(order)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         elif activity.get_status() == "PREPARING":
             context = {"msg": SECKILL_CONSTANT["ACTIVITY_PREPARING"]}
-            return Response(context, status=status.HTTP_400_BAD_REQUEST)
+            return Response(context, status=status.HTTP_200_OK)
         else:
             context = {"msg": SECKILL_CONSTANT["ACTIVITY_OVER"]}
-            return Response(context, status=status.HTTP_400_BAD_REQUEST)
+            return Response(context, status=status.HTTP_200_OK)
 
 
 class OrderList(GenericAPIView):
