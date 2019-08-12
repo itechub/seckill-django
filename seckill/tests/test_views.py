@@ -6,8 +6,8 @@ from rest_framework import status
 from seckill.models import Product, Activity, Order
 from seckill.serializers import (
     ActivitySerializer,
-    ActivityInstanceSerializer,
     OrderSerializer,
+    ActivityInstanceSerializer,
 )
 from seckill.constants import SECKILL_CONSTANT
 
@@ -53,7 +53,7 @@ class ActivityTest(TestCase):
         response = self.client.get(
             reverse("get_activity_instance", kwargs={"pk": activity.pk})
         )
-        # activity = Activity.objects.get(pk=activity.id)
+        Activity.objects.get(pk=activity.id)
         serializer = ActivityInstanceSerializer(activity)
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -81,6 +81,9 @@ class ActivityTest(TestCase):
         serializer = OrderSerializer(order)
         self.assertEqual(response.data, serializer.data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # 成功下单之后，商品库存会减少 1
+        activity = Activity.objects.get(pk=activity.id)
+        self.assertEqual(activity.product.inventory, 9)
 
     def test_place_invalid_order_to_running_valid_activity(self):
         activity = self.data_slug("first activity", "product A", 10, "RUNNING")
@@ -102,7 +105,7 @@ class ActivityTest(TestCase):
         )
         msg = {"msg": SECKILL_CONSTANT["EMPTY_INVENTPRY"]}
         self.assertEqual(response.data, msg)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_place_valid_order_to_preparing_valid_activity(self):
         activity = self.data_slug(
@@ -116,7 +119,7 @@ class ActivityTest(TestCase):
         )
         msg = {"msg": SECKILL_CONSTANT["ACTIVITY_PREPARING"]}
         self.assertEqual(response.data, msg)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_place_valid_order_to_over_valid_activity(self):
         activity = self.data_slug("first activity", "product A", 10, "OVER")
@@ -128,7 +131,7 @@ class ActivityTest(TestCase):
         )
         msg = {"msg": SECKILL_CONSTANT["ACTIVITY_OVER"]}
         self.assertEqual(response.data, msg)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_place_duplicate_valid_order_to_running_valid_activity(self):
         activity = self.data_slug("first activity", "product A", 10, "RUNNING")
@@ -145,7 +148,7 @@ class ActivityTest(TestCase):
         )
         msg = {"msg": SECKILL_CONSTANT["DUPLICATE_ORDER"]}
         self.assertEqual(response.data, msg)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         orders = orders = Order.objects.filter(uuid=uuid).count()
         self.assertEqual(orders, 1)
 

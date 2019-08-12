@@ -20,12 +20,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "*i1bab6dp-*^uikq=j%9wz!1)gg-&eh&fy5-&)8&q#fy6s*!v!"
+SECRET_KEY = os.environ.get(
+    "SECKILL_SECRET_KEY", "*i1bab6dp-*^uikq=j%9wz!1)gg-&eh&fy5-&)8&q#fy6s*!v!"
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -76,11 +78,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "USER": os.environ.get("USER", "unknown"),
-        "PASSWORD": os.environ.get("PASSWORD", "secret"),
-        "NAME": os.environ.get("NAME", "unknown"),
-        "HOST": os.environ.get("HOST", "unknow"),
-        "PORT": os.environ.get("PORT", "unknow"),
+        "USER": os.environ.get("SECKILL_DB_USERNAME", "unknown"),
+        "PASSWORD": os.environ.get("SECKILL_DB_PASSWORD", "secret"),
+        "NAME": os.environ.get("SECKILL_DB_NAME", "unknown"),
+        "HOST": os.environ.get("SECKILL_DB_HOST", "unknow"),
+        "PORT": os.environ.get("SECKILL_DB_PORT", "unknow"),
         "OPTIONS": {"charset": "utf8mb4"},
     }
 }
@@ -122,4 +124,7 @@ TIME_ZONE = "Asia/Shanghai"
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
-STATIC_URL = "/static/"
+STATIC_URL = "/statics/"
+STATIC_ROOT = os.path.join(BASE_DIR, "collectstatic", "statics")
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_FILE_PREFIX = "media"
