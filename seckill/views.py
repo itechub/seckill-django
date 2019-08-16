@@ -4,6 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponse
+from django.core.cache import cache
 
 # Django Restful Framework
 from rest_framework import status
@@ -15,6 +16,7 @@ from rest_framework.permissions import (
     AllowAny,
     IsAuthenticatedOrReadOnly,
 )
+from django_redis import get_redis_connection
 
 from .serializers import (
     ActivitySerializer,
@@ -69,28 +71,41 @@ class ActivityInstance(GenericAPIView):
         if not uuid:
             context = {"msg": SECKILL_CONSTANT["REQUIRED_UUID"]}
             return Response(context, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            activity = Activity.objects.get(pk=pk)
-        except Activity.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
+        activity = cache.get(f"activity-{pk}")
+        redis_con = get_redis_connection("default")
+        if not activity:
+            try:
+                activity = Activity.objects.get(pk=pk)
+                cache.set(f"activity-{pk}", activity)
+                redis_con.hset(
+                    f"activity-{pk}", "total", activity.product.inventory
+                )
+                redis_con.hset(f"activity-{pk}", "access", 0)
+            except Activity.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
         if activity.get_status() == "RUNNING":
-            if activity.product.inventory <= 0:
+            # if activity.product.inventory <= 0:
+            if int(redis_con.hget(f"activity-{pk}", "total")) <= int(
+                redis_con.hget(f"activity-{pk}", "access")
+            ):
                 context = {"msg": SECKILL_CONSTANT["EMPTY_INVENTPRY"]}
                 return Response(context, status=status.HTTP_200_OK)
-            try:
-                with transaction.atomic():
-                    order = Order.objects.create(uuid=uuid, activity=activity)
-                    product = Product.objects.select_for_update().get(
-                        pk=activity.product.id
-                    )
-                    product.inventory -= 1
-                    product.save()
-            except ValidationError:
-                context = {"msg": SECKILL_CONSTANT["DUPLICATE_ORDER"]}
-                return Response(context, status=status.HTTP_200_OK)
-            serializer = OrderSerializer(order)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            redis_con.hincrby(f"activity-{pk}", "access", 1)
+
+            return Response("ok", status=status.HTTP_201_CREATED)
+
+            # try:
+            #    with transaction.atomic():
+            #        order = Order.objects.create(uuid=uuid, activity=activity)
+            #        product = Product.objects.select_for_update().get(
+            #            pk=activity.product.id
+            #        )
+            #        product.inventory -= 1
+            #        product.save()
+            # except ValidationError:
+            #    context = {"msg": SECKILL_CONSTANT["DUPLICATE_ORDER"]}
+            #    return Response(context, status=status.HTTP_200_OK)
+            # serializer = OrderSerializer(order)
 
         elif activity.get_status() == "PREPARING":
             context = {"msg": SECKILL_CONSTANT["ACTIVITY_PREPARING"]}

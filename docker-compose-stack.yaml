@@ -45,6 +45,7 @@ services:
       DJANGO_MANAGEPY_COLLECTSTATIC: "on"
       SECKILL_DEBUG: ${SECKILL_DEBUG}
       SECKILL_SECRET_KEY: ${SECKILL_SECRET_KEY}
+      SECKILL_REDIS_MASTER: redis
       SECKILL_DB_HOST: mysql
       SECKILL_DB_PORT: 3306
       SECKILL_DB_USERNAME: ${SECKILL_DB_USERNAME}
@@ -63,7 +64,7 @@ services:
       - seckill
 
   nginx:
-    image: shadybat/seckill-nginx:latest
+    image: shadybat/seckill-nginx:v1.1
     depends_on:
       - django
     ports:
