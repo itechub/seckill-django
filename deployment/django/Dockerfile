@@ -27,4 +27,4 @@ VOLUME ["/env/app/collectstatic/statics", "/env/app/media"]
 
 ENTRYPOINT ["/env/app/docker-entrypoint.sh"]
 
-CMD ["sh", "-c", "/env/bin/gunicorn --workers 8 --timeout 240 --bind  0.0.0.0:8080  config.wsgi:application"]
+CMD ["sh", "-c", "/env/bin/gunicorn --workers 4 --timeout 240 --bind  0.0.0.0:8080  config.wsgi:application"]
