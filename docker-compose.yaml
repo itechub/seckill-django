@@ -20,7 +20,7 @@ services:
     image: shadybat/seckill-redis:v1.1
 
   django:
-    image: shadybat/seckill-django:v1.1
+    image: seckill-django:v1.1
     build:
       context: ./
       dockerfile: ./deployment/django/Dockerfile
@@ -50,7 +50,7 @@ services:
       - seckill
 
   nginx:
-    image: shadybat/seckill-nginx:v1.1
+    image: seckill-nginx:v1.1
     build:
       context: ./
       dockerfile: deployment/nginx/Dockerfile

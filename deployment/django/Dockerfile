@@ -27,5 +27,4 @@ VOLUME ["/env/app/collectstatic/statics", "/env/app/media"]
 
 ENTRYPOINT ["/env/app/docker-entrypoint.sh"]
 
-<<<<<<< HEAD
 CMD ["sh", "-c", "/env/bin/gunicorn --worker-class=gevent --worker-connections=1000 --workers=9 --timeout 240 --bind  0.0.0.0:8080  config.wsgi:application"]
